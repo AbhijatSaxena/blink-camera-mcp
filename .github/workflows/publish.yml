@@ -1,0 +1,69 @@
+name: publish
+
+# Publishes the package to PyPI and then the server to the official MCP Registry.
+#
+# Both steps authenticate with OIDC, so no tokens are stored in this repository:
+#   * PyPI needs a pending/trusted publisher configured for this repo + workflow + environment
+#     (pypi.org -> Your projects -> Publishing, or a pending publisher for a new name)
+#   * the MCP Registry accepts `mcp-publisher login github-oidc` because this job has
+#     id-token: write
+#
+# Order matters: the registry verifies ownership by reading the package's PyPI description,
+# so the PyPI upload has to succeed first.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write # OIDC for both PyPI trusted publishing and the MCP Registry
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e . pytest pytest-asyncio pytest-timeout ruff build
+
+      - name: Lint and test
+        run: |
+          ruff check blink_mcp tests
+          ruff format --check blink_mcp tests
+          pytest -q
+
+      - name: Build distributions
+        run: python -m build
+
+      - name: Check metadata
+        run: pip install twine && twine check dist/*
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+
+      - name: Pin the release version in server.json
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/v}"
+          jq --arg v "$VERSION" '.version = $v | .packages[].version = $v' server.json > server.tmp
+          mv server.tmp server.json
+          cat server.json
+
+      - name: Install mcp-publisher
+        run: |
+          curl -L "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" | tar xz mcp-publisher
+
+      - name: Authenticate to the MCP Registry
+        run: ./mcp-publisher login github-oidc
+
+      - name: Publish to the MCP Registry
+        run: ./mcp-publisher publish
