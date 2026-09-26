@@ -100,7 +100,7 @@ If you installed it into a virtualenv instead, set `command` to that interpreter
 
 ### Claude Desktop — one-click
 
-Download `blink-camera-mcp-0.1.0.mcpb` from the
+Download `blink-camera-mcp-0.1.1.mcpb` from the
 [releases page](https://github.com/AbhijatSaxena/blink-camera-mcp/releases/latest) and open it.
 Claude Desktop prompts for your Blink email and password (kept in the OS keychain), and asks for
 the 2FA code file only if your account uses verification. The bundle carries no server code of its
@@ -209,7 +209,7 @@ the Blink cloud API and the IMMI transport.
 ## Tests
 
 ```bash
-pytest                    # 55 offline tests: protocol bytes, closed-loop logic, tool layer,
+pytest                    # 68 offline tests: protocol bytes, closed-loop logic, tool layer,
                           # a real stdio handshake, and a stub control plane
 ```
 

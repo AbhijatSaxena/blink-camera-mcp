@@ -2,7 +2,7 @@
   "manifest_version": "0.4",
   "name": "blink-camera-mcp",
   "display_name": "Blink Camera",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Control an Amazon Blink camera and its pan/tilt mount, and capture a frame.",
   "long_description": "An MCP server for Amazon Blink cameras, including the pan/tilt mount that Blink's own app can move but its API cannot.\n\nAsk where the camera is pointing and what its travel limits are, aim it by absolute or relative angle, send it back home, run a 360 degree overview sweep, and take a snapshot. Moves are closed loop: the tool waits for the mount to report that it has stopped moving and returns the angle the hardware confirmed, so a caller never has to guess whether a command landed.\n\nThe server talks to Blink the same way the phone app does, which means it shares one liveview slot per camera with that app. Credentials are yours; if your account has two-factor verification, the code is read from a file you point it at and never passed on a command line.",
   "author": {

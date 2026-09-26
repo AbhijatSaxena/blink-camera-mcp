@@ -38,14 +38,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "lts/*"
-      - name: Versions agree across pyproject.toml, server.json and the bundle manifest
+      - name: Versions agree across pyproject.toml, server.json, the bundle manifest and the code
         run: |
           PYPROJECT=$(grep -m1 '^version' pyproject.toml | cut -d'"' -f2)
           SERVER=$(jq -r .version server.json)
           MANIFEST=$(jq -r .version mcpb/manifest.json)
-          echo "pyproject=$PYPROJECT  server.json=$SERVER  mcpb/manifest.json=$MANIFEST"
-          if [ "$PYPROJECT" != "$SERVER" ] || [ "$SERVER" != "$MANIFEST" ]; then
-            echo "::error::version mismatch between pyproject.toml, server.json and mcpb/manifest.json"
+          RUNTIME=$(grep -m1 '__version__' blink_mcp/__init__.py | cut -d'"' -f2)
+          echo "pyproject=$PYPROJECT  server.json=$SERVER  manifest=$MANIFEST  __version__=$RUNTIME"
+          if [ "$PYPROJECT" != "$SERVER" ] || [ "$SERVER" != "$MANIFEST" ] || [ "$MANIFEST" != "$RUNTIME" ]; then
+            echo "::error::version mismatch between pyproject.toml, server.json, mcpb/manifest.json and blink_mcp/__init__.py"
             exit 1
           fi
       - name: Validate the MCPB manifest
