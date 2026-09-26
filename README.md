@@ -1,5 +1,7 @@
 # blink-mcp
 
+[![ci](https://github.com/AbhijatSaxena/blink-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/AbhijatSaxena/blink-mcp/actions/workflows/ci.yml)
+
 An [MCP](https://modelcontextprotocol.io) server for **Amazon Blink cameras**, including the
 **pan/tilt mount** that Blink's own API gives you no way to move.
 
