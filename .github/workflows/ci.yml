@@ -29,6 +29,32 @@ jobs:
       - name: Test
         run: pytest -q
 
+  # The bundle and the registry manifest are versioned with the package. Guard all three so a
+  # release cannot ship a manifest that points at a version which does not exist.
+  bundle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "lts/*"
+      - name: Versions agree across pyproject.toml, server.json and the bundle manifest
+        run: |
+          PYPROJECT=$(grep -m1 '^version' pyproject.toml | cut -d'"' -f2)
+          SERVER=$(jq -r .version server.json)
+          MANIFEST=$(jq -r .version mcpb/manifest.json)
+          echo "pyproject=$PYPROJECT  server.json=$SERVER  mcpb/manifest.json=$MANIFEST"
+          if [ "$PYPROJECT" != "$SERVER" ] || [ "$SERVER" != "$MANIFEST" ]; then
+            echo "::error::version mismatch between pyproject.toml, server.json and mcpb/manifest.json"
+            exit 1
+          fi
+      - name: Validate the MCPB manifest
+        run: npx --yes @anthropic-ai/mcpb@latest validate mcpb/manifest.json
+      - name: Pack the bundle and report its contents
+        run: |
+          npx --yes @anthropic-ai/mcpb@latest pack mcpb bundle.mcpb
+          npx --yes @anthropic-ai/mcpb@latest info bundle.mcpb
+
   # The live test needs a real camera and real credentials, so it only runs on request.
   live:
     if: github.event_name == 'workflow_dispatch'
