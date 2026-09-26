@@ -1,0 +1,28 @@
+# environments
+.venv/
+venv/
+env/
+
+# python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+# tooling caches
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# credentials and tokens: never commit these
+.env
+*.env
+state.json
+blink_state.json
+code.txt
+
+# os noise
+.DS_Store
+Thumbs.db
