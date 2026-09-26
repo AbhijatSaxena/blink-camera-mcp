@@ -1,11 +1,16 @@
 # blink-camera-mcp
 
 [![ci](https://github.com/AbhijatSaxena/blink-camera-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/AbhijatSaxena/blink-camera-mcp/actions/workflows/ci.yml)
+[![pypi](https://img.shields.io/pypi/v/blink-camera-mcp.svg)](https://pypi.org/project/blink-camera-mcp/)
+[![python](https://img.shields.io/pypi/pyversions/blink-camera-mcp.svg)](https://pypi.org/project/blink-camera-mcp/)
 
 <!-- mcp-name: io.github.AbhijatSaxena/blink-camera-mcp -->
 
 An [MCP](https://modelcontextprotocol.io) server for **Amazon Blink cameras**, including the
 **pan/tilt mount** that Blink's own API gives you no way to move.
+
+Install it with `uvx blink-camera-mcp`. It is listed in the official MCP Registry as
+`io.github.AbhijatSaxena/blink-camera-mcp`.
 
 Give any MCP host — Claude Desktop, an IDE agent, your own client — the ability to see where
 a camera is pointing, aim it, and look through it.
