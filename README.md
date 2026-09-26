@@ -6,6 +6,8 @@
 
 <!-- mcp-name: io.github.AbhijatSaxena/blink-camera-mcp -->
 
+<img src="assets/logo-512.png" alt="blink-camera-mcp" width="128">
+
 An [MCP](https://modelcontextprotocol.io) server for **Amazon Blink cameras**, including the
 **pan/tilt mount** that Blink's own API gives you no way to move.
 
