@@ -1,15 +1,14 @@
 name: publish
 
-# Publishes the package to PyPI and then the server to the official MCP Registry.
+# Publishes this MCP server to the official MCP Registry when a version tag is pushed.
 #
-# Both steps authenticate with OIDC, so no tokens are stored in this repository:
-#   * PyPI needs a pending/trusted publisher configured for this repo + workflow + environment
-#     (pypi.org -> Your projects -> Publishing, or a pending publisher for a new name)
-#   * the MCP Registry accepts `mcp-publisher login github-oidc` because this job has
-#     id-token: write
+# The registry entry (server.json) is metadata pointing at the PyPI package, and the registry
+# proves ownership by finding the `mcp-name` marker inside that package's description — so the
+# PyPI release has to exist before this runs.
 #
-# Order matters: the registry verifies ownership by reading the package's PyPI description,
-# so the PyPI upload has to succeed first.
+# Uploading to PyPI is deliberately a local step (`uv publish dist/*`) so the API token stays in
+# the maintainer's credential store instead of being copied into CI. Publishing to the registry
+# needs no secret at all: GitHub OIDC is sufficient, which is what id-token: write enables.
 
 on:
   push:
@@ -17,46 +16,33 @@ on:
   workflow_dispatch:
 
 jobs:
-  publish:
+  registry:
     runs-on: ubuntu-latest
-    environment: pypi
     permissions:
-      id-token: write # OIDC for both PyPI trusted publishing and the MCP Registry
+      id-token: write
       contents: read
     steps:
       - uses: actions/checkout@v5
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Install
+      - name: Confirm the release is on PyPI and carries the ownership marker
         run: |
-          python -m pip install --upgrade pip
-          pip install -e . pytest pytest-asyncio pytest-timeout ruff build
-
-      - name: Lint and test
-        run: |
-          ruff check blink_mcp tests
-          ruff format --check blink_mcp tests
-          pytest -q
-
-      - name: Build distributions
-        run: python -m build
-
-      - name: Check metadata
-        run: pip install twine && twine check dist/*
-
-      - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
-
-      - name: Pin the release version in server.json
-        if: startsWith(github.ref, 'refs/tags/v')
-        run: |
-          VERSION="${GITHUB_REF#refs/tags/v}"
-          jq --arg v "$VERSION" '.version = $v | .packages[].version = $v' server.json > server.tmp
-          mv server.tmp server.json
-          cat server.json
+          IDENTIFIER=$(python -c "import json;print(json.load(open('server.json'))['packages'][0]['identifier'])")
+          VERSION=$(python -c "import json;print(json.load(open('server.json'))['version'])")
+          echo "checking ${IDENTIFIER} ${VERSION} on PyPI"
+          code=000
+          for attempt in 1 2 3 4 5; do
+            code=$(curl -s -o pypi.json -w "%{http_code}" "https://pypi.org/pypi/${IDENTIFIER}/${VERSION}/json")
+            if [ "$code" = "200" ]; then echo "found it on PyPI"; break; fi
+            echo "PyPI returned $code (attempt ${attempt}/5); waiting for it to appear"
+            sleep 15
+          done
+          if [ "$code" != "200" ]; then
+            echo "::error::${IDENTIFIER} ${VERSION} is not on PyPI — upload it before tagging"
+            exit 1
+          fi
+          grep -q "mcp-name: io.github.AbhijatSaxena/blink-camera-mcp" pypi.json \
+            || { echo "::error::the PyPI description is missing the mcp-name ownership marker"; exit 1; }
+          echo "ownership marker present"
 
       - name: Install mcp-publisher
         run: |
