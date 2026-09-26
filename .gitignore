@@ -26,3 +26,6 @@ code.txt
 # os noise
 .DS_Store
 Thumbs.db
+
+# uv resolves this locally; nothing in CI or the published package uses it
+uv.lock
