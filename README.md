@@ -109,6 +109,24 @@ own — it depends on this package from PyPI, so it can never drift from the rel
 They all read the same JSON as above. Paste it into the host's MCP config — LM Studio: `mcp.json`;
 VS Code: `.vscode/mcp.json`; Cursor: `.cursor/mcp.json`. Cline installs it from this README.
 
+### Hermes
+
+Hermes' curated catalog is for remote, OAuth-authenticated servers, and this one has to run on a
+machine that can reach your camera — so add it as an ordinary stdio server in
+`~/.hermes/config.yaml`:
+
+```yaml
+mcp_servers:
+  blink:
+    command: "uvx"
+    args: ["blink-camera-mcp"]
+    env:
+      BLINK_USERNAME: "you@example.com"
+      BLINK_PASSWORD: "…"
+```
+
+Restart the session (or `/reload-mcp`) and the eight tools show up like any other.
+
 ## Two ways to run it
 
 **Standalone (default)** — the server owns the camera's live session and publishes the video
