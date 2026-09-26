@@ -37,7 +37,7 @@ async def main() -> None:
         while True:
             try:
                 chunk = await asyncio.wait_for(reader.read(65536), timeout=1.0)
-            except TimeoutError:
+            except asyncio.TimeoutError:  # not the builtin: differs on 3.10
                 continue
             if not chunk:
                 return

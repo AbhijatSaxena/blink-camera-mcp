@@ -206,7 +206,11 @@ class PanTiltController:
                 return self._state.position, False, "timed out waiting for the mount to settle"
             try:
                 await asyncio.wait_for(self._settled.wait(), timeout=remaining)
-            except TimeoutError:
+            except asyncio.TimeoutError:
+                # asyncio.TimeoutError, NOT the builtin TimeoutError: the two only became the
+                # same object in 3.11. Ruff's UP041 rewrites this to the builtin, which
+                # silently lets the timeout escape on 3.10 -- which is why pyproject pins
+                # ruff's target version to py310.
                 return self._state.position, False, "timed out waiting for the mount to settle"
 
             position = self._state.position
@@ -277,7 +281,7 @@ class PanTiltController:
             await self._send(command, message)
             try:
                 await asyncio.wait_for(self._settled.wait(), timeout=grace)
-            except TimeoutError:
+            except asyncio.TimeoutError:  # see the note in _await_settled: not the builtin
                 pass
             return CommandResult(
                 command=command,

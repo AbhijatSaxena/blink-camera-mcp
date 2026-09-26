@@ -40,7 +40,7 @@ include = ["blink_mcp*"]
 
 [tool.ruff]
 line-length = 100
-target-version = "py311"
+target-version = "py310"
 
 [tool.ruff.lint]
 select = ["C", "D", "E", "F", "I", "N", "PL", "Q", "UP", "W"]
