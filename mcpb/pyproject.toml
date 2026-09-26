@@ -1,0 +1,8 @@
+[project]
+name = "blink-camera-mcp-extension"
+version = "0.1.0"
+description = "Desktop extension wrapper for blink-camera-mcp"
+requires-python = ">=3.10"
+dependencies = [
+    "blink-camera-mcp>=0.1.0",
+]

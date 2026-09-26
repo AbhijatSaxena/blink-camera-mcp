@@ -32,3 +32,6 @@ uv.lock
 
 # raw generated sources; ship the normalised asset only
 assets/logo-raw.png
+
+# local publication log, not part of the published package
+SHIPPING-STATUS.md
