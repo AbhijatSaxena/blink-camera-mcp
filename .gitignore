@@ -29,3 +29,6 @@ Thumbs.db
 
 # uv resolves this locally; nothing in CI or the published package uses it
 uv.lock
+
+# raw generated sources; ship the normalised asset only
+assets/logo-raw.png
