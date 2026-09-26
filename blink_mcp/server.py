@@ -48,8 +48,25 @@ async def _resolve(awaitable: Any) -> Any:
         raise ToolError(str(error)) from None
 
 
+def _require_started(backend: Backend) -> None:
+    """Fail fast when the session never came up, instead of timing out on every call."""
+    reason = getattr(backend, "startup_error", None)
+    if reason:
+        raise ToolError(
+            f"the camera session is not up: {reason} -- the server keeps running and retries, "
+            f"so fix the cause and call again"
+        )
+
+
+async def _command(backend: Backend, name: str) -> dict[str, Any]:
+    """Run a payload-free command, failing fast if the session never came up."""
+    _require_started(backend)
+    return await _resolve(backend.command(name))
+
+
 async def _move(backend: Backend, pan: int, tilt: int, force: bool = False) -> dict[str, Any]:
     """Move and require the mount to confirm it arrived."""
+    _require_started(backend)
     result = await _resolve(backend.move(pan, tilt, force=force))
     if not result.get("settled"):
         raise ToolError(
@@ -61,6 +78,7 @@ async def _move(backend: Backend, pan: int, tilt: int, force: bool = False) -> d
 
 async def _nudge(backend: Backend, pan_delta: int, tilt_delta: int) -> dict[str, Any]:
     """Move relative to the angle the mount currently reports."""
+    _require_started(backend)
     status = await _resolve(backend.status())
     if not status.get("position"):
         await backend.wait_for_position(10.0)
@@ -78,6 +96,7 @@ async def _nudge(backend: Backend, pan_delta: int, tilt_delta: int) -> dict[str,
 
 async def _snapshot(backend: Backend) -> Image:
     """Decode one frame from whatever stream the backend is publishing."""
+    _require_started(backend)
     status = await _resolve(backend.status())
     stream_url = backend.stream_url() or status.get("stream_url")
     if not stream_url:
@@ -166,10 +185,15 @@ def create_server(
         """Report the camera's orientation, travel limits and session state.
 
         Call this first: `position` is null until the camera has a live session, which tells
-        you the other tools will fail. It also reports `stream_url`, where the live video can
-        be read (e.g. by OBS or ffmpeg).
+        you the other tools will fail. When the session could not be started at all,
+        `startup_error` says why. It also reports `stream_url`, where the live video can be
+        read (e.g. by OBS or ffmpeg).
         """
-        return await _resolve(backend.status())
+        status = await _resolve(backend.status())
+        reason = getattr(backend, "startup_error", None)
+        if reason:
+            status["startup_error"] = reason
+        return status
 
     @server.tool()
     async def pan_tilt(pan: int, tilt: int, force: bool = False) -> dict[str, Any]:
@@ -194,22 +218,22 @@ def create_server(
     @server.tool()
     async def pan_tilt_stop() -> dict[str, Any]:
         """Stop the mount's motors immediately. Harmless when it is already idle."""
-        return await _resolve(backend.command("stop"))
+        return await _command(backend, "stop")
 
     @server.tool()
     async def pan_tilt_home() -> dict[str, Any]:
         """Send the camera to its saved home position and report where it ends up."""
-        return await _resolve(backend.command("home"))
+        return await _command(backend, "home")
 
     @server.tool()
     async def pan_tilt_set_home() -> dict[str, Any]:
         """Save the camera's current angle as its home position."""
-        return await _resolve(backend.command("set_home"))
+        return await _command(backend, "set_home")
 
     @server.tool()
     async def pan_tilt_overview() -> dict[str, Any]:
         """Start a full 360 degree pan overview. Returns immediately; the sweep takes a while."""
-        return await _resolve(backend.command("overview"))
+        return await _command(backend, "overview")
 
     @server.tool()
     async def snapshot() -> Image:

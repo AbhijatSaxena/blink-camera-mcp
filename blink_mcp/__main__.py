@@ -15,6 +15,7 @@ Examples:
 from __future__ import annotations
 
 import argparse
+import asyncio
 import contextlib
 import json
 import logging
@@ -34,6 +35,11 @@ from .session import DEFAULT_SESSION_SECONDS, BlinkSession
 from .stream import StreamServer
 
 _LOGGER = logging.getLogger(__name__)
+
+#: How long to wait between attempts to attach once a start has failed. The server keeps
+#: serving while it retries, so a host --- or a directory that checks a server by starting it
+#: --- sees the tools rather than a process that died.
+RETRY_INTERVAL = 15.0
 
 
 def load_env_file(path: pathlib.Path) -> None:
@@ -135,21 +141,53 @@ def make_backend(args: argparse.Namespace):
     )
 
 
+async def start_backend(backend) -> bool:
+    """Start the backend, recording a failure rather than raising it.
+
+    A server that exits because it has no credentials yet cannot be introspected, cannot be
+    listed by a directory that checks servers by starting them, and gives its user nothing to
+    act on. Staying up and saying what is wrong is strictly more useful: the tools are listed,
+    ``camera_status`` carries the reason, and :func:`retry_start` keeps trying.
+    """
+    try:
+        await backend.start()
+    except BackendError as error:
+        backend.startup_error = str(error)
+    except Exception as error:  # noqa: BLE001 - reported below, not swallowed
+        backend.startup_error = f"could not start the session: {error}"
+    else:
+        backend.startup_error = None
+        _LOGGER.info("blink-mcp ready")
+        return True
+    _LOGGER.error(
+        "blink-mcp: %s -- still serving, retrying every %.0fs",
+        backend.startup_error,
+        RETRY_INTERVAL,
+    )
+    return False
+
+
+async def retry_start(backend) -> None:
+    """Keep trying to attach in the background, so fixing the cause needs no restart."""
+    while True:
+        await asyncio.sleep(RETRY_INTERVAL)
+        if await start_backend(backend):
+            return
+
+
 def build_server(backend, args: argparse.Namespace) -> MCPServer:
     """Wrap a backend in an MCP server with a lifespan that owns its lifetime."""
 
     @contextlib.asynccontextmanager
     async def lifespan(server: MCPServer) -> AsyncIterator[dict[str, Any]]:  # noqa: ARG001
-        try:
-            await backend.start()
-        except BackendError as error:
-            raise SystemExit(f"blink-mcp: {error}") from None
-        except Exception as error:  # noqa: BLE001 - report cleanly, do not serve blindly
-            raise SystemExit(f"blink-mcp: could not start the session: {error}") from None
-        _LOGGER.info("blink-mcp ready")
+        await start_backend(backend)
+        retry = asyncio.create_task(retry_start(backend))
         try:
             yield {"backend": backend}
         finally:
+            retry.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await retry
             await backend.aclose()
 
     return create_server(backend, lifespan=lifespan)

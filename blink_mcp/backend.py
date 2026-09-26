@@ -45,6 +45,11 @@ class BackendError(RuntimeError):
 class Backend(Protocol):
     """What the tools need from whatever is holding the camera."""
 
+    #: Why the last start attempt failed, or None when the backend is up. Written by the
+    #: startup path and read by the tools, so a call can fail with the real reason instead of
+    #: timing out waiting for a session that will never arrive.
+    startup_error: str | None
+
     async def start(self) -> None:
         """Prepare the backend (connect, log in, open a session)."""
         ...
@@ -80,6 +85,7 @@ class SessionBackend:
     def __init__(self, session: BlinkSession) -> None:
         """Wrap a session manager."""
         self.session = session
+        self.startup_error: str | None = None
 
     async def start(self) -> None:
         """Log in and open a liveview."""
@@ -141,6 +147,7 @@ class BridgeBackend:
         """Store the bridge endpoints."""
         self.control_url = control_url.rstrip("/")
         self._stream_url = stream_url
+        self.startup_error: str | None = None
 
     async def start(self) -> None:
         """Confirm the bridge is answering, so failure happens at startup not first use."""
