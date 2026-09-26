@@ -137,7 +137,7 @@ class Host:
 
 def main() -> None:
     """Run the handshake, a nudge out and back, then a snapshot."""
-    parser = argparse.ArgumentParser(description="Live smoke test for blink-mcp.")
+    parser = argparse.ArgumentParser(description="Live smoke test for blink-camera-mcp.")
     parser.add_argument("--state-file", required=True, help="cached Blink token file")
     parser.add_argument("--camera", help="camera name")
     parser.add_argument("--delta", type=int, default=4, help="degrees to nudge (default 4)")

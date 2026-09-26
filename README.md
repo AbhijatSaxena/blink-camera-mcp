@@ -1,6 +1,8 @@
-# blink-mcp
+# blink-camera-mcp
 
-[![ci](https://github.com/AbhijatSaxena/blink-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/AbhijatSaxena/blink-mcp/actions/workflows/ci.yml)
+[![ci](https://github.com/AbhijatSaxena/blink-camera-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/AbhijatSaxena/blink-camera-mcp/actions/workflows/ci.yml)
+
+<!-- mcp-name: io.github.AbhijatSaxena/blink-camera-mcp -->
 
 An [MCP](https://modelcontextprotocol.io) server for **Amazon Blink cameras**, including the
 **pan/tilt mount** that Blink's own API gives you no way to move.
@@ -36,8 +38,10 @@ messages, and exposes the whole thing as MCP tools with closed-loop semantics.
 ## Install
 
 ```bash
-pip install blink-mcp
+pip install blink-camera-mcp          # or without installing: uvx blink-camera-mcp
 ```
+
+The distribution is `blink-camera-mcp`; the command it installs is `blink-mcp`.
 
 You need Python 3.10+, a Blink account, and `ffmpeg` on PATH for `snapshot`
 (set `BLINK_FFMPEG` if it lives somewhere unusual).
@@ -76,12 +80,16 @@ blink-mcp --print-config
 {
   "mcpServers": {
     "blink": {
-      "command": "blink-mcp",
-      "args": ["--stream-port", "9000"]
+      "command": "uvx",
+      "args": ["blink-camera-mcp", "--stream-port", "9000"]
     }
   }
 }
 ```
+
+Hosts that manage their own Python (Claude Desktop, VS Code, LM Studio, …) run `uvx` as above.
+If you installed it into a virtualenv instead, set `command` to that interpreter and `args` to
+`["-m", "blink_mcp", …]`.
 
 ## Two ways to run it
 

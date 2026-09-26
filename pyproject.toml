@@ -3,14 +3,25 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "blink-mcp"
+name = "blink-camera-mcp"
 version = "0.1.0"
-description = "MCP server for Amazon Blink cameras: look, aim (pan/tilt), and expose the live stream"
+description = "MCP server for Amazon Blink cameras: see, aim (pan/tilt) and capture, including the undocumented pan/tilt accessory protocol."
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
 authors = [{name = "Abhijat Saxena"}]
-keywords = ["blink", "camera", "mcp", "model-context-protocol", "pan", "tilt", "home-automation"]
+keywords = [
+    "mcp",
+    "model-context-protocol",
+    "blink",
+    "amazon-blink",
+    "blink-camera",
+    "camera",
+    "pan-tilt",
+    "ptz",
+    "security-camera",
+    "home-automation",
+]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
@@ -29,8 +40,8 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/AbhijatSaxena/blink-mcp"
-Issues = "https://github.com/AbhijatSaxena/blink-mcp/issues"
+Homepage = "https://github.com/AbhijatSaxena/blink-camera-mcp"
+Issues = "https://github.com/AbhijatSaxena/blink-camera-mcp/issues"
 
 [project.scripts]
 blink-mcp = "blink_mcp.__main__:main"
